@@ -1,0 +1,182 @@
+from django.shortcuts import render
+from rest_framework import viewsets , status , permissions
+from .models import Book , Author , Publisher , Category , Review , WishlistItem
+from .serializers import BookSerializer  , AuthorSerializer , PublisherSerializer , CategorySerializer , ReviewSerializer , ReviewCreateSerializer , WhisListItemSerializer
+from rest_framework.decorators import action 
+from rest_framework.response import Response
+from account.permissions import IsSuperAdminOrAdmin
+from django.shortcuts import get_object_or_404
+from django.db.models import Count, Avg
+from rest_framework.permissions import IsAuthenticated
+from .filters import BookFilter
+import django_filters
+
+
+class BookViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrAdmin]
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
+    filterset_class = BookFilter # <<< استفاده از فیلتر سفارشی
+
+
+
+    @action(detail=True, methods=['get', 'post'], url_path='reviews' , permission_classes=[permissions.AllowAny])
+    def reviews(self, request, pk=None):
+        book = self.get_object()
+
+        if request.method == 'GET':
+
+            reviews_qs = Review.objects.filter(book=book)
+            serializer = ReviewSerializer(reviews_qs, many=True)
+            return Response(serializer.data)
+
+        elif request.method == 'POST':
+            print('enterd')
+            if not request.user.is_authenticated:
+                return Response({"detail": "Authentication credentials were not provided."}, status=401)
+            if Review.objects.filter(book = book , user = request.user).exists():
+                return Response(
+                {"detail": "you already created a reviews"},
+                status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer = ReviewCreateSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(book=book, user=request.user)
+                print(serializer.instance)
+                return Response(ReviewSerializer(serializer.instance).data, status=201)
+            return Response(serializer.errors, status=400)
+        
+
+    @action(detail=False, methods=['get'], url_path='most-reviewed')
+    def most_reviewed(self, request):
+        # تعداد نقدها را شمارش می‌کنیم و بر اساس آن مرتب می‌کنیم
+        books = Book.objects.annotate(
+            num_reviews=Count('reviews') # فرض می‌کنیم رابطه 'reviews' در مدل Book تعریف شده است
+        ).order_by('-num_reviews')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)[:10]
+    
+
+
+    @action(detail=False, methods=['get'], url_path='most-wishlisted')
+    def most_wishlisted(self, request):
+        # تعداد دفعاتی که کتاب به Wishlist اضافه شده را شمارش می‌کنیم
+        books = Book.objects.annotate(
+            num_wishlisted=Count('wishlistitems') # فرض می‌کنیم رابطه 'wishlistitems' در مدل Book تعریف شده است
+        ).order_by('-num_wishlisted')
+        serializer = self.get_serializer(books, many=True)
+        return Response(serializer.data)
+    
+
+    @action(detail=False, methods=['get'], url_path='top-rated')
+    def top_rated(self , request):
+        books = Book.objects.all().order_by('-average_rating')
+        serializer = self.get_serializer(books , many = True)
+        return Response(serializer.data)
+
+
+    
+
+class AuthorViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrAdmin]
+
+    queryset = Author.objects.all()
+    serializer_class = AuthorSerializer
+
+    @action(detail=True, methods=['get'], url_path='books') 
+    def list_books(self, request, pk=None):
+        try:
+            author = self.get_object()
+            books = Book.objects.filter(author = author)
+            serializer = BookSerializer(books , many = True)
+            return Response(serializer.data)
+        except Author.DoesNotExist:
+            return Response({"detail": "author doesnt found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class PublisherViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrAdmin]
+    queryset = Publisher.objects.all()
+    serializer_class = PublisherSerializer
+
+
+    @action(detail=True , methods=['get'] , url_path='books')
+    def list_book(self , request , pk = None):
+        try:
+            publisher = self.get_object()
+            print(publisher)
+            print(type(publisher))
+            books = Book.objects.filter(publisher = publisher)
+            serializer = BookSerializer(books , many = True)
+            return Response(serializer.data)
+        except Publisher.DoesNotExist:
+            return Response({"detail": "publisher doesnt found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsSuperAdminOrAdmin]
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+    @action(detail=True, methods=['get'], url_path='books')
+    def list_books(self, request, pk=None):
+        try:
+            category = self.get_object()
+            print(category)
+            print(type(category))
+            books = Book.objects.filter(categories=category) 
+            serializer = BookSerializer(books, many=True)
+            return Response(serializer.data)
+        except Category.DoesNotExist:
+            return Response({"detail": "Categories doesnt found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        user = self.request.user
+
+        queryset = Review.objects.all()
+
+        if  not user.is_staff:
+            queryset = Review.objects.filter( user = user)
+
+        return queryset
+    
+
+        
+class WhishListItemViewSet(viewsets.ModelViewSet):
+    queryset = WishlistItem.objects.all()
+    serializer_class = WhisListItemSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        user = self.request.user
+
+        queryset = WishlistItem.objects.all()
+
+        if  not user.is_staff:
+            queryset = WishlistItem.objects.filter( user = user)
+
+        return queryset
+    
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+

@@ -1,15 +1,17 @@
 # Todo — LIBA
 
 ## Phase 0 — Project Hygiene (current)
-- [ ] Restructure project into `apps/` layout:
-  - `account` → `apps/users/`
-  - `library_managment` → split into `apps/catalog/` (Book, Author, Publisher, Category) + `apps/reviews/` (Review) + `apps/library/` (Wishlist → Shelf)
-  - Create empty `apps/core/` for shared permissions, pagination, utils
-- [ ] Move SECRET_KEY, DEBUG, DB creds to `.env` (django-environ or python-decouple)
-- [ ] Split settings: `library/settings/base.py`, `dev.py`, `prod.py`
-- [ ] Add `.gitignore` (db.sqlite3, media/, __pycache__, .env, *.pyc)
-- [ ] Add `requirements.txt`
-- [ ] First clean commit
+- [x] Create venv, install packages, generate `requirements.txt`
+- [x] Move SECRET_KEY, DEBUG to `.env` (python-decouple) + `.env.example`
+- [x] Add `.gitignore` (venv/, db.sqlite3, media/, __pycache__, .env, *.pyc)
+- [x] Rename project package `library` → `backend` (fix DJANGO_SETTINGS_MODULE, ROOT_URLCONF, WSGI_APPLICATION references)
+- [x] Create GitHub repo (`social-book-api`), first commit pushed
+- [x] Restructure `account` → `apps/users/` (fixed AUTH_USER_MODEL, apps.py name,
+      internal serializer import, migration dependency references, reset local db.sqlite3)
+- [ ] Restructure `library_managment` → split into `apps/catalog/` (Book, Author,
+      Publisher, Category) + `apps/reviews/` (Review) + `apps/library/` (Wishlist → Shelf)
+- [ ] Create empty `apps/core/` for shared permissions, pagination, utils
+- [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Phase 1 — Database Migration
 - [ ] Add PostgreSQL (psycopg2-binary), update DATABASES in prod/dev settings

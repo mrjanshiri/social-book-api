@@ -22,8 +22,7 @@ from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('library_managment.urls')),
-    path('api/auth/', include('account.urls')),
-
+    path('api/auth/', include('apps.users.urls')),
 
 ]
 if settings.DEBUG:  # فقط در حالت توسعه

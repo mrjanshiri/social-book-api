@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError 
-from account.models import Account
+from apps.users.models import Account
 User = get_user_model()
 
 

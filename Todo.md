@@ -17,7 +17,8 @@
       from apps.reviews where needed)
 - [x] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library`
       (kept model/field names as-is — rename to `Shelf` deferred to Phase 2)
-- [ ] Create empty `apps/core/` for shared permissions, pagination, utils
+- [x] Scaffold `apps/core` (plain Python package, no models — not in INSTALLED_APPS,
+      just `permissions.py` + `pagination.py` placeholders for now)
 - [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Revisit Later (noted during Phase 0, not urgent)
@@ -25,6 +26,17 @@
   "if not staff, filter by user" pattern — candidate for a shared mixin/base class in
   `apps/core` once that app exists (marjan flagged dissatisfaction with current form,
   revisit after all apps are split)
+- `apps/core` is currently just an empty scaffold. Planned for Phase 2, together with
+  the `role` → `is_staff`/`is_superuser` refactor (see Phase 2 above), not before:
+  - Move `IsSuperAdminOrAdmin` (and `IsAdmin`) from `apps/users/permissions.py` to
+    `apps/core/permissions.py`, rewritten to use `is_staff`/`is_superuser` instead of
+    the `role` field. Doing this now would mean rewriting it twice (once to move,
+    once to drop `role`), so it's deferred until both changes happen together.
+  - Consider a shared base queryset/mixin for the repeated "staff sees all, user sees
+    own" pattern (see item above) once the permission rewrite is done.
+  - `apps/core/pagination.py` stays a placeholder until a concrete need for custom
+    pagination (beyond DRF's global `PageNumberPagination` default) comes up — no
+    speculative pagination classes before then.
 - [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Phase 1 — Database Migration

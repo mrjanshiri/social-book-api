@@ -1,7 +1,5 @@
 from django.shortcuts import render
 from rest_framework import viewsets , status , permissions
-from .models import Book , Author , Publisher , Category , Review , WishlistItem
-from .serializers import BookSerializer  , AuthorSerializer , PublisherSerializer , CategorySerializer , ReviewSerializer , ReviewCreateSerializer , WhisListItemSerializer
 from rest_framework.decorators import action 
 from rest_framework.response import Response
 from apps.users.permissions import IsSuperAdminOrAdmin
@@ -10,6 +8,10 @@ from django.db.models import Count, Avg
 from rest_framework.permissions import IsAuthenticated
 from .filters import BookFilter
 import django_filters
+from .models import Book, Author, Publisher, Category, WishlistItem
+from .serializers import BookSerializer, AuthorSerializer, PublisherSerializer, CategorySerializer, WhisListItemSerializer
+from apps.reviews.models import Review
+from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
 
 class BookViewSet(viewsets.ModelViewSet):
@@ -139,25 +141,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-
-class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
-
-
-    def get_queryset(self):
-        user = self.request.user
-
-        queryset = Review.objects.all()
-
-        if  not user.is_staff:
-            queryset = Review.objects.filter( user = user)
-
-        return queryset
     
 
-        
+    
 class WhishListItemViewSet(viewsets.ModelViewSet):
     queryset = WishlistItem.objects.all()
     serializer_class = WhisListItemSerializer

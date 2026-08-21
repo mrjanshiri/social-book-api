@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.catalog.urls')),
     path('api/auth/', include('apps.users.urls')),
+    path('api/', include('apps.reviews.urls')),
 
 ]
 if settings.DEBUG:  # فقط در حالت توسعه

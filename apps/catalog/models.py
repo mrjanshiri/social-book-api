@@ -44,23 +44,6 @@ class Book(models.Model):
             self.average_rating = 0.0
         self.save()
 
-class Review(models.Model):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(Account , on_delete=models.CASCADE , related_name='user_reviews')
-    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)]) # امتیاز از 1 تا 5
-    comment = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('book', 'user') # هر کاربر فقط یک بار می تواند به یک کتاب امتیاز دهد
-
-    def __str__(self):
-        return f'Review for {self.book.title} by {self.user}'
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.book.update_average_rating()
-
 
 class WishlistItem(models.Model):
     user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='wishlist_items')

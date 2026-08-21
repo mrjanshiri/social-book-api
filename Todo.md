@@ -11,9 +11,18 @@
 - [x] Move `library_managment` → `apps/catalog` as a whole (fixed apps.py name,
       INSTALLED_APPS, urls.py, migration app_label references in dependencies and
       FK `to=`, reset local db.sqlite3, applied migrations)
-- [ ] Extract `Review` model + serializer + view + url out of `apps/catalog` into `apps/reviews`
+- [x] Extract `Review` model + serializer + view + url out of `apps/catalog` into `apps/reviews`
+      (kept nested `/books/<id>/reviews/` action in BookViewSet as-is — decided not to
+      change API behavior during structural refactor; catalog imports Review/serializers
+      from apps.reviews where needed)
 - [ ] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library` (consider rename to `Shelf` with reading status — separate decision)
 - [ ] Create empty `apps/core/` for shared permissions, pagination, utils
+
+## Revisit Later (noted during Phase 0, not urgent)
+- `ReviewViewSet.get_queryset` and `WhishListItemViewSet.get_queryset` duplicate the same
+  "if not staff, filter by user" pattern — candidate for a shared mixin/base class in
+  `apps/core` once that app exists (marjan flagged dissatisfaction with current form,
+  revisit after all apps are split)
 - [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Phase 1 — Database Migration

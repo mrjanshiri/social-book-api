@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Author, Publisher, Category, Book, Review , WishlistItem
-
+from .models import Author, Publisher, Category, Book, WishlistItem
+from apps.reviews.models import Review
 
 # Register your models here.
 

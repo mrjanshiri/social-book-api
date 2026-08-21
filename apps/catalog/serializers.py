@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Author, Publisher, Category, Book, Review , WishlistItem
+from .models import Author, Publisher, Category, Book,WishlistItem
+from apps.reviews.serializers import ReviewSerializer
+
 
 class AuthorSerializer(serializers.ModelSerializer):
     books = serializers.StringRelatedField(many=True, read_only=True)
@@ -21,22 +23,6 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'books']
-
-class ReviewSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
-    book = serializers.StringRelatedField(read_only=True)
-    class Meta:
-        model = Review
-        fields = ['id', 'user', 'rating', 'comment', 'created_at', 'book']
-        read_only_fields = ['id', 'created_at']
-
-class ReviewCreateSerializer(serializers.ModelSerializer):
-
-
-    class Meta:
-        model = Review
-        fields = ['rating', 'comment'] 
-
 
 
 class BookSerializer(serializers.ModelSerializer):

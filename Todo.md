@@ -19,7 +19,8 @@
       (kept model/field names as-is — rename to `Shelf` deferred to Phase 2)
 - [x] Scaffold `apps/core` (plain Python package, no models — not in INSTALLED_APPS,
       just `permissions.py` + `pagination.py` placeholders for now)
-- [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
+- [x] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
+      (DJANGO_SETTINGS_MODULE controlled via `.env`, read in manage.py/wsgi.py/asgi.py)
 
 ## Revisit Later (noted during Phase 0, not urgent)
 - `ReviewViewSet.get_queryset` and `WhishListItemViewSet.get_queryset` duplicate the same
@@ -37,7 +38,6 @@
   - `apps/core/pagination.py` stays a placeholder until a concrete need for custom
     pagination (beyond DRF's global `PageNumberPagination` default) comes up — no
     speculative pagination classes before then.
-- [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Phase 1 — Database Migration
 - [ ] Add PostgreSQL (psycopg2-binary), update DATABASES in prod/dev settings

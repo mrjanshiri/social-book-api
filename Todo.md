@@ -8,8 +8,11 @@
 - [x] Create GitHub repo (`social-book-api`), first commit pushed
 - [x] Restructure `account` → `apps/users/` (fixed AUTH_USER_MODEL, apps.py name,
       internal serializer import, migration dependency references, reset local db.sqlite3)
-- [ ] Restructure `library_managment` → split into `apps/catalog/` (Book, Author,
-      Publisher, Category) + `apps/reviews/` (Review) + `apps/library/` (Wishlist → Shelf)
+- [x] Move `library_managment` → `apps/catalog` as a whole (fixed apps.py name,
+      INSTALLED_APPS, urls.py, migration app_label references in dependencies and
+      FK `to=`, reset local db.sqlite3, applied migrations)
+- [ ] Extract `Review` model + serializer + view + url out of `apps/catalog` into `apps/reviews`
+- [ ] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library` (consider rename to `Shelf` with reading status — separate decision)
 - [ ] Create empty `apps/core/` for shared permissions, pagination, utils
 - [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 

@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/', include('apps.catalog.urls')),
     path('api/auth/', include('apps.users.urls')),
     path('api/', include('apps.reviews.urls')),
+    path('api/', include('apps.library.urls')),
 
 ]
 if settings.DEBUG:  # فقط در حالت توسعه

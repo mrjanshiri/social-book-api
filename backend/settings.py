@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_filters',
     'apps.reviews',
+    'apps.library',
 ]
 AUTH_USER_MODEL = 'users.Account'
 

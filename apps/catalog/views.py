@@ -8,8 +8,8 @@ from django.db.models import Count, Avg
 from rest_framework.permissions import IsAuthenticated
 from .filters import BookFilter
 import django_filters
-from .models import Book, Author, Publisher, Category, WishlistItem
-from .serializers import BookSerializer, AuthorSerializer, PublisherSerializer, CategorySerializer, WhisListItemSerializer
+from .models import Book, Author, Publisher, Category
+from .serializers import BookSerializer, AuthorSerializer, PublisherSerializer, CategorySerializer
 from apps.reviews.models import Review
 from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
@@ -144,25 +144,5 @@ class CategoryViewSet(viewsets.ModelViewSet):
     
 
     
-class WhishListItemViewSet(viewsets.ModelViewSet):
-    queryset = WishlistItem.objects.all()
-    serializer_class = WhisListItemSerializer
-    permission_classes = [IsAuthenticated]
-
-
-    def get_queryset(self):
-        user = self.request.user
-
-        queryset = WishlistItem.objects.all()
-
-        if  not user.is_staff:
-            queryset = WishlistItem.objects.filter( user = user)
-
-        return queryset
-    
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
 
 

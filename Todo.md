@@ -15,8 +15,10 @@
       (kept nested `/books/<id>/reviews/` action in BookViewSet as-is — decided not to
       change API behavior during structural refactor; catalog imports Review/serializers
       from apps.reviews where needed)
-- [ ] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library` (consider rename to `Shelf` with reading status — separate decision)
+- [x] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library`
+      (kept model/field names as-is — rename to `Shelf` deferred to Phase 2)
 - [ ] Create empty `apps/core/` for shared permissions, pagination, utils
+- [ ] Split settings: `backend/settings/base.py`, `dev.py`, `prod.py`
 
 ## Revisit Later (noted during Phase 0, not urgent)
 - `ReviewViewSet.get_queryset` and `WhishListItemViewSet.get_queryset` duplicate the same

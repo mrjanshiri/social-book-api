@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets , status , permissions
 from rest_framework.decorators import action 
 from rest_framework.response import Response
-from apps.users.permissions import IsSuperAdminOrAdmin
+from apps.core.permissions import IsSuperAdminOrAdmin
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Avg
 from rest_framework.permissions import IsAuthenticated

@@ -12,14 +12,12 @@ class Account(AbstractUser):
 
     first_name = models.CharField(
         max_length=100,
-        blank=True,
-        null=True
+        blank=True
     )
 
     last_name = models.CharField(
         max_length=100,
-        blank=True,
-        null=True
+        blank=True
     )
 
     profile_picture = models.ImageField(

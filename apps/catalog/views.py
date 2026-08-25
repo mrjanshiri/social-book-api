@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets , status , permissions
 from rest_framework.decorators import action 
 from rest_framework.response import Response
-from apps.core.permissions import IsSuperAdminOrAdmin
+from apps.core.permissions import IsAdminOrSelfReadOnly
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Avg
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +15,7 @@ from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
 
 class BookViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAdminOrSelfReadOnly]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
@@ -81,7 +81,7 @@ class BookViewSet(viewsets.ModelViewSet):
     
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAdminOrSelfReadOnly]
 
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
@@ -101,7 +101,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class PublisherViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAdminOrSelfReadOnly]
     queryset = Publisher.objects.all()
     serializer_class = PublisherSerializer
 
@@ -122,7 +122,7 @@ class PublisherViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAdminOrSelfReadOnly]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 

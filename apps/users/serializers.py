@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from apps.users.models import Account
 
 User = get_user_model()
 
@@ -42,8 +41,8 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'last_name', 'first_name', 'profile_picture', 'email']
-        read_only_fields = ['id', 'username']
+        fields = ['username', 'last_name', 'first_name', 'profile_picture', 'email']
+        read_only_fields = ['username']
 
     def validate_email(self, value):
         if not value:
@@ -55,7 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Account
+        model = User
         fields = ['id', 'username', 'email', 'is_staff', 'is_superuser']
 
     def validate(self, attrs):

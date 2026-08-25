@@ -7,7 +7,7 @@ from .serializers import SignupSerializer, ProfileSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated
 from .models import Account
 from .utils import would_remove_last_superuser
-from apps.core.permissions import IsSuperAdminOrAdmin
+from apps.core.permissions import IsAdminOrSelfReadOnly
 from rest_framework import viewsets
 
 User = get_user_model()
@@ -48,7 +48,9 @@ class UserProfileView(APIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
-    permission_classes = [IsSuperAdminOrAdmin]
+    permission_classes = [IsAdminOrSelfReadOnly]
+    # No create: user creation only happens through SignupView.
+    http_method_names = ['get', 'put', 'patch', 'delete', 'head', 'options']
 
     def get_queryset(self):
         user = self.request.user
@@ -57,12 +59,27 @@ class UserViewSet(viewsets.ModelViewSet):
         return Account.objects.filter(pk=user.pk)
 
     def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
         with transaction.atomic():
             user_to_update = self.get_object()
-            new_value = request.data.get('is_superuser', user_to_update.is_superuser)
+
+            # Validate first so 'is_superuser' is a real bool (DRF's
+            # BooleanField correctly parses "false"/"true"/0/1/etc.),
+            # instead of reading the raw, un-coerced request payload
+            # where bool("false") would wrongly evaluate to True.
+            serializer = self.get_serializer(user_to_update, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+
+            new_value = serializer.validated_data.get('is_superuser', user_to_update.is_superuser)
             if would_remove_last_superuser(user_to_update, new_value):
                 return Response({"detail": "Cannot demote the last SuperAdmin."}, status=403)
-            return super().update(request, *args, **kwargs)
+
+            self.perform_update(serializer)
+
+            if getattr(user_to_update, '_prefetched_objects_cache', None):
+                user_to_update._prefetched_objects_cache = {}
+
+            return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         with transaction.atomic():

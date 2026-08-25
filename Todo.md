@@ -27,14 +27,12 @@
   "if not staff, filter by user" pattern — candidate for a shared mixin/base class in
   `apps/core` once that app exists (marjan flagged dissatisfaction with current form,
   revisit after all apps are split)
-- `apps/core` is currently just an empty scaffold. Planned for Phase 2, together with
-  the `role` → `is_staff`/`is_superuser` refactor (see Phase 2 above), not before:
-  - Move `IsSuperAdminOrAdmin` (and `IsAdmin`) from `apps/users/permissions.py` to
-    `apps/core/permissions.py`, rewritten to use `is_staff`/`is_superuser` instead of
-    the `role` field. Doing this now would mean rewriting it twice (once to move,
-    once to drop `role`), so it's deferred until both changes happen together.
-  - Consider a shared base queryset/mixin for the repeated "staff sees all, user sees
-    own" pattern (see item above) once the permission rewrite is done.
+- `apps/core` was just an empty scaffold in Phase 0. The `role` → `is_staff`/`is_superuser`
+  refactor (Phase 2) is now done, and as part of it:
+  - [x] `IsSuperAdminOrAdmin` (now `IsAdminOrSelfReadOnly`) moved to `apps/core/permissions.py`,
+    rewritten to use `is_staff`/`is_superuser` instead of `role`
+  - [ ] Still open: shared base queryset/mixin for the repeated "staff sees all, user sees
+    own" pattern (see item above) — not done yet
   - `apps/core/pagination.py` stays a placeholder until a concrete need for custom
     pagination (beyond DRF's global `PageNumberPagination` default) comes up — no
     speculative pagination classes before then.
@@ -45,8 +43,17 @@
 - [ ] (Optional) Docker Compose for local Postgres
 
 ## Phase 2 — Core Domain Cleanup
-- [ ] `apps/users`: replace custom `role` field with `is_staff` / `is_superuser`
-  - Keep custom logic: prevent deleting/demoting last superuser
+- [x] `apps/users`: replace custom `role` field with `is_staff` / `is_superuser`
+  - Kept custom logic: prevent deleting/demoting last superuser (`would_remove_last_superuser`,
+    now re-locks the target row too, not just the superuser count, to avoid a stale-read race)
+  - Also fixed while in there: `UserViewSet` no longer allows creating users via `POST`
+    (signup stays exclusive to `SignupView`); admin-to-admin actions restricted to
+    superusers only; `is_superuser` is now read from validated serializer data instead
+    of raw `request.data` (was vulnerable to `bool("false") == True`); `ProfileSerializer`
+    hides `id` and makes `username` read-only; dropped redundant `null=True` on
+    `first_name`/`last_name`
+  - Renamed `IsSuperAdminOrAdmin` → `IsAdminOrSelfReadOnly` (apps/core/permissions.py) to
+    actually describe its behavior; updated in apps/catalog too
 - [ ] `apps/catalog`: no major changes expected, verify after app split
 - [ ] `apps/reviews`: fix `most_reviewed` bug (slicing Response instead of queryset)
 - [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)

@@ -2,12 +2,7 @@ from rest_framework import permissions
 
 
 class IsAdminOrSelfReadOnly(permissions.BasePermission):
-    """
-    - Superuser: full access to everyone.
-    - Staff/Admin (non-superuser): full access to non-staff objects and to
-      themselves; no access to other staff/superuser accounts.
-    - Regular (non-staff) user: read-only access to their own object.
-    """
+    
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False

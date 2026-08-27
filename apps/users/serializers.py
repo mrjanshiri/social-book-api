@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+import re
 
 User = get_user_model()
 
@@ -26,14 +27,24 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An integrity error occurred. Please try again.")
 
     def validate_username(self, value):
+
+        if not re.fullmatch(r'[A-Za-z0-9_]+', value):
+            raise serializers.ValidationError(
+                "Username can only contain letters, numbers, and underscores."
+            )
+
         if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("This username is already in use.")
+            raise serializers.ValidationError(
+                "This username is already in use."
+            )
+
         return value
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+    
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -43,6 +54,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'last_name', 'first_name', 'profile_picture', 'email']
         read_only_fields = ['username']
+
+    def validate(self, attrs):
+        if 'username' in self.initial_data:
+            raise serializers.ValidationError({
+                "username": "Username cannot be changed."
+            })
+        return attrs
 
     def validate_email(self, value):
         if not value:

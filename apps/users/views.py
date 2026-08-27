@@ -20,7 +20,7 @@ class SignupView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response({"message": "user created", "user_id": user.id}, status=status.HTTP_201_CREATED)
+            return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -49,7 +49,6 @@ class UserProfileView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrSelfReadOnly]
-    # No create: user creation only happens through SignupView.
     http_method_names = ['get', 'put', 'patch', 'delete', 'head', 'options']
 
     def get_queryset(self):
@@ -63,10 +62,7 @@ class UserViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             user_to_update = self.get_object()
 
-            # Validate first so 'is_superuser' is a real bool (DRF's
-            # BooleanField correctly parses "false"/"true"/0/1/etc.),
-            # instead of reading the raw, un-coerced request payload
-            # where bool("false") would wrongly evaluate to True.
+
             serializer = self.get_serializer(user_to_update, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
 

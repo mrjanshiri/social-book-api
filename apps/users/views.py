@@ -62,7 +62,6 @@ class UserViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             user_to_update = self.get_object()
 
-
             serializer = self.get_serializer(user_to_update, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
 

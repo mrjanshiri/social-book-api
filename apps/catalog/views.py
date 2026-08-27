@@ -52,13 +52,11 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='most-reviewed')
     def most_reviewed(self, request):
-        # تعداد نقدها را شمارش می‌کنیم و بر اساس آن مرتب می‌کنیم
         books = Book.objects.annotate(
-            num_reviews=Count('reviews') # فرض می‌کنیم رابطه 'reviews' در مدل Book تعریف شده است
-        ).order_by('-num_reviews')
+            num_reviews=Count('reviews')
+        ).order_by('-num_reviews')[:10]
         serializer = self.get_serializer(books, many=True)
-        return Response(serializer.data)[:10]
-    
+        return Response(serializer.data)
 
 
     @action(detail=False, methods=['get'], url_path='most-wishlisted')

@@ -1,6 +1,5 @@
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
-from apps.users.models import Account
+
 class Author(models.Model):
     name = models.CharField(max_length=100)
     bio = models.TextField(blank=True)

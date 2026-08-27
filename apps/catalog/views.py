@@ -57,14 +57,15 @@ class BookViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
 
-
     @action(detail=False, methods=['get'], url_path='most-wishlisted')
     def most_wishlisted(self, request):
         books = Book.objects.annotate(
-            num_wishlisted=Count('wishlistitems') 
-        ).order_by('-num_wishlisted')
+            num_wishlisted=Count('wishlistitems')
+        ).order_by('-num_wishlisted')[:10]
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
+    
+
     
 
     @action(detail=False, methods=['get'], url_path='top-rated')

@@ -30,7 +30,7 @@ class Book(models.Model):
     isbn = models.CharField(max_length=13, unique=True, help_text='13-digit ISBN')
     pages = models.PositiveIntegerField()
     description = models.TextField(blank=True)
-    average_rating = models.FloatField(default=0.0) # به طور خودکار محاسبه می شود
+    average_rating = models.FloatField(default=0.0)
 
     def __str__(self):
         return self.title

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import Author, Publisher, Category, Book
-from apps.reviews.serializers import ReviewSerializer
 from .utils import normalize_isbn
+from apps.reviews.serializers import ReviewSerializer
+
 
 class AuthorSerializer(serializers.ModelSerializer):
     books = serializers.StringRelatedField(many=True, read_only=True)
@@ -29,18 +30,20 @@ class BookSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     publisher = serializers.StringRelatedField(read_only=True)
     categories = serializers.StringRelatedField(many=True, read_only=True)
-    reviews = ReviewSerializer(many=True, read_only=True) 
-
+    reviews = ReviewSerializer(many=True, read_only=True) # برای نمایش ریویوها
 
     author_id = serializers.PrimaryKeyRelatedField(
         queryset=Author.objects.all(),
-        source='author', 
-        write_only=True 
+        source='author',
+        write_only=True
     )
+
     publisher_id = serializers.PrimaryKeyRelatedField(
         queryset=Publisher.objects.all(),
         source='publisher',
         write_only=True,
+        required=False,
+        allow_null=True,
     )
     category_ids = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -54,11 +57,9 @@ class BookSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'author', 'publisher', 'categories', 'publication_date',
             'isbn', 'pages', 'description', 'average_rating', 'reviews',
-            'author_id', 'publisher_id', 'category_ids' 
+            'author_id', 'publisher_id', 'category_ids'
         ]
-
         read_only_fields = ['average_rating', 'author', 'publisher', 'categories', 'reviews']
-
 
     def validate_isbn(self, value):
         try:
@@ -67,19 +68,20 @@ class BookSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(str(e))
 
     def create(self, validated_data):
-        author_id = validated_data.pop('author') 
-        publisher_id = validated_data.pop('publisher')
+        author_id = validated_data.pop('author')
+        publisher_id = validated_data.pop('publisher', None)
         category_ids = validated_data.pop('categories', [])
 
         book = Book.objects.create(author=author_id, publisher=publisher_id, **validated_data)
 
-        book.categories.set(category_ids) 
+        book.categories.set(category_ids)
 
         return book
 
     def update(self, instance, validated_data):
 
         categories_provided = 'categories' in validated_data
+        publisher_provided = 'publisher' in validated_data
 
         author_obj = validated_data.pop('author', None)
         publisher_obj = validated_data.pop('publisher', None)
@@ -87,7 +89,7 @@ class BookSerializer(serializers.ModelSerializer):
 
         if author_obj:
             instance.author = author_obj
-        if publisher_obj:
+        if publisher_provided:
             instance.publisher = publisher_obj
 
         if categories_provided:
@@ -99,6 +101,3 @@ class BookSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-
-

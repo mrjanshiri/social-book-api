@@ -79,20 +79,19 @@ class BookSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
 
+        categories_provided = 'categories' in validated_data
+
         author_obj = validated_data.pop('author', None)
         publisher_obj = validated_data.pop('publisher', None)
-        category_objs = validated_data.pop('categories', []) 
+        category_objs = validated_data.pop('categories', None)
 
- 
         if author_obj:
             instance.author = author_obj
         if publisher_obj:
             instance.publisher = publisher_obj
 
-
-        if category_objs:
+        if categories_provided:
             instance.categories.set(category_objs)
-
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

@@ -20,3 +20,8 @@ class Review(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.book.update_average_rating()
+
+    def delete(self, *args, **kwargs):
+        book = self.book
+        super().delete(*args, **kwargs)
+        book.update_average_rating()

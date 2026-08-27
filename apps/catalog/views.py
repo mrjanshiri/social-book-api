@@ -19,7 +19,7 @@ class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
-    filterset_class = BookFilter # <<< استفاده از فیلتر سفارشی
+    filterset_class = BookFilter
 
 
 
@@ -45,7 +45,6 @@ class BookViewSet(viewsets.ModelViewSet):
             serializer = ReviewCreateSerializer(data=request.data)
             if serializer.is_valid():
                 serializer.save(book=book, user=request.user)
-                print(serializer.instance)
                 return Response(ReviewSerializer(serializer.instance).data, status=201)
             return Response(serializer.errors, status=400)
         
@@ -61,9 +60,8 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='most-wishlisted')
     def most_wishlisted(self, request):
-        # تعداد دفعاتی که کتاب به Wishlist اضافه شده را شمارش می‌کنیم
         books = Book.objects.annotate(
-            num_wishlisted=Count('wishlistitems') # فرض می‌کنیم رابطه 'wishlistitems' در مدل Book تعریف شده است
+            num_wishlisted=Count('wishlistitems') 
         ).order_by('-num_wishlisted')
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
@@ -128,8 +126,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def list_books(self, request, pk=None):
         try:
             category = self.get_object()
-            print(category)
-            print(type(category))
             books = Book.objects.filter(categories=category) 
             serializer = BookSerializer(books, many=True)
             return Response(serializer.data)

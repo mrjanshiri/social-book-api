@@ -56,6 +56,7 @@ class BookViewSet(viewsets.ModelViewSet):
         ).order_by('-num_reviews')[:10]
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
+    
 
     @action(detail=False, methods=['get'], url_path='most-wishlisted')
     def most_wishlisted(self, request):
@@ -65,7 +66,6 @@ class BookViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
     
-
     
 
     @action(detail=False, methods=['get'], url_path='top-rated')

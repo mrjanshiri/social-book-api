@@ -54,12 +54,68 @@
     `first_name`/`last_name`
   - Renamed `IsSuperAdminOrAdmin` → `IsAdminOrSelfReadOnly` (apps/core/permissions.py) to
     actually describe its behavior; updated in apps/catalog too
-- [ ] `apps/catalog`: no major changes expected, verify after app split
-- [ ] `apps/reviews`: fix `most_reviewed` bug (slicing Response instead of queryset)
+- [x] `apps/catalog`: no major changes expected, verify after app split
+  - Found and fixed a lot more than expected during verification:
+    - `most_reviewed`: `[:10]` was slicing the `Response` object instead of the queryset
+      (silently caused a 500 on every call — `Response` doesn't support slicing the
+      normal way, since `__getitem__` is overridden for HTTP headers)
+    - `average_rating` wasn't recalculated on review deletion (only on save) — added
+      `Review.delete()` override, symmetric to the existing `save()` override
+      (note: only covers `instance.delete()`, not bulk `queryset.delete()` — fine for
+      now since there's no bulk-delete endpoint)
+    - `BookSerializer.update()`: couldn't clear `categories` via `category_ids: []`
+      (falsy-list bug — fixed by checking `'categories' in validated_data` before
+      `pop()`, not the popped value's truthiness)
+    - Added ISBN validation/normalization (`apps/catalog/utils.py::normalize_isbn`):
+      accepts ISBN-10 or ISBN-13, with/without hyphens, validates checksum, always
+      stores a normalized ISBN-13 — needed because Marjan plans to pull books from an
+      external books API later
+    - `Book.author` FK changed `on_delete` from `CASCADE` to `PROTECT` (deleting an
+      author with books no longer cascades into deleting those books/reviews/wishlist
+      items)
+    - `most_wishlisted` / `top_rated` had no result limit (returned every book) —
+      capped at 10, consistent with `most_reviewed`
+    - `publisher_id` is now optional/nullable in `BookSerializer` (model already
+      allowed `null=True`, serializer didn't) — also fixed `create()` (was a bare
+      `pop('publisher')`, KeyError if omitted) and `update()` (same falsy-check bug
+      as categories: `publisher_id: null` couldn't actually clear the publisher)
+    - `BookFilter.Meta.fields` contained non-model field names (`published_after`,
+      `published_before`, `min_average_rating`, `max_average_rating`) — this crashed
+      `makemigrations`/`migrate`/`runserver` entirely on the current django-filter
+      version. Explicitly declared filters don't need to be repeated in `Meta.fields`.
+    - `categories` filter was comparing a Category **pk** against the `name` field
+      with `icontains` (`field_name='categories__name'` + `ModelMultipleChoiceFilter`,
+      which passes pks) — never matched anything real. Fixed to
+      `field_name='categories'`, `lookup_expr='exact'`.
+    - `AuthorViewSet`/`PublisherViewSet`/`CategoryViewSet`'s `list_books`/`list_book`:
+      `except Author.DoesNotExist` was dead code (`get_object()` raises `Http404`,
+      not `Model.DoesNotExist`), so `Http404` (and `PermissionDenied`) fell through to
+      `except Exception` and returned **500 instead of 404/403**, leaking internal
+      Python error text. Removed the try/except entirely — `get_object()` already
+      handles 404/403 correctly on its own.
+    - Removed unused imports: `MinValueValidator`/`MaxValueValidator`/`Account` in
+      `models.py`, `render`/`Avg`/`get_object_or_404` in `views.py` — all leftovers
+      from before `Review`/`Wishlist` were extracted into their own apps
+- [x] Remove leftover `print()` statements, replace with logging where needed
+  (none left anywhere in the project as of today — mostly found in `apps/catalog`)
 - [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
-- [ ] Remove leftover `print()` statements, replace with logging where needed
 - [ ] Add `drf-spectacular` for API docs
 - [ ] Write basic tests for users + catalog + reviews
+
+## Phase 2.5 — User Book Contributions (not started, design only so far)
+- [ ] Regular (non-staff) users should be able to add a book by ISBN only —
+  fetch the rest (title, author, publisher, ...) from an external books API
+  (Google Books / OpenLibrary, TBD). Admin/staff keep the existing full-form
+  `POST /books/` as-is; this is a *separate*, additional endpoint for regular
+  users, not a replacement.
+- [ ] Regular users should be able to fix an ISBN typo on a book *they added*
+  (needs a `Book.added_by` FK — decided 1-ب: ownership-based, only the
+  original adder can edit/isbn-correct their own book; staff/superuser can
+  always edit any book; delete stays staff/superuser-only, even for the
+  adder)
+- [ ] Until the ISBN-lookup endpoint exists, regular users attempting
+  `POST /books/` should get an informative "coming soon" message rather than
+  a bare permission-denied
 
 ## Phase 3 — Social Features
 - [ ] `apps/social`: Follow / Follower model + endpoints

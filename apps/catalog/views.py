@@ -1,7 +1,7 @@
 from rest_framework import viewsets , status , permissions
 from rest_framework.decorators import action 
 from rest_framework.response import Response
-from apps.core.permissions import IsAdminOrSelfReadOnly
+from apps.core.permissions import IsAdminOrSelfReadOnly  , IsAdminOrReadOnly
 from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
 from .filters import BookFilter
@@ -66,7 +66,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminOrSelfReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
@@ -80,7 +80,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class PublisherViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminOrSelfReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Publisher.objects.all()
     serializer_class = PublisherSerializer
 
@@ -93,7 +93,7 @@ class PublisherViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminOrSelfReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 

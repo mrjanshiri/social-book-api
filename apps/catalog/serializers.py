@@ -30,7 +30,7 @@ class BookSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
     publisher = serializers.StringRelatedField(read_only=True)
     categories = serializers.StringRelatedField(many=True, read_only=True)
-    reviews = ReviewSerializer(many=True, read_only=True) # برای نمایش ریویوها
+    reviews = ReviewSerializer(many=True, read_only=True) 
 
     author_id = serializers.PrimaryKeyRelatedField(
         queryset=Author.objects.all(),

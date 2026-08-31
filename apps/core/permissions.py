@@ -20,3 +20,11 @@ class IsAdminOrSelfReadOnly(permissions.BasePermission):
                 return False
             return True
         return request.method in permissions.SAFE_METHODS and obj == request.user
+
+
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return bool(request.user and request.user.is_staff)

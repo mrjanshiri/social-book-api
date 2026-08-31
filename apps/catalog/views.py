@@ -2,6 +2,7 @@ from rest_framework import viewsets , status , permissions
 from rest_framework.decorators import action 
 from rest_framework.response import Response
 from apps.core.permissions import IsAdminOrSelfReadOnly  , IsAdminOrReadOnly
+from .permissions import IsBookOwnerOrAdminOrReadOnly
 from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
 from .filters import BookFilter
@@ -13,11 +14,14 @@ from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
 
 class BookViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminOrSelfReadOnly]
+    permission_classes = [IsBookOwnerOrAdminOrReadOnly]
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = BookFilter 
+
+    def perform_create(self, serializer):
+        serializer.save(added_by=self.request.user)
 
     @action(detail=True, methods=['get', 'post'], url_path='reviews' , permission_classes=[permissions.AllowAny])
     def reviews(self, request, pk=None):

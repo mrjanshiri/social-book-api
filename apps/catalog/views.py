@@ -15,7 +15,7 @@ from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
 class BookViewSet(viewsets.ModelViewSet):
     permission_classes = [IsBookOwnerOrAdminOrReadOnly]
-    queryset = Book.objects.all()
+    queryset = Book.objects.select_related('author', 'publisher').prefetch_related('categories', 'reviews')
     serializer_class = BookSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = BookFilter 

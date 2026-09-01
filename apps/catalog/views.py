@@ -37,7 +37,7 @@ class BookViewSet(viewsets.ModelViewSet):
                 return Response({"detail": "Authentication credentials were not provided."}, status=401)
             if Review.objects.filter(book = book , user = request.user).exists():
                 return Response(
-                {"detail": "you already created a reviews"},
+                {"detail": "you already created a review"},
                 status=status.HTTP_400_BAD_REQUEST
                 )
             serializer = ReviewCreateSerializer(data=request.data)
@@ -89,7 +89,7 @@ class PublisherViewSet(viewsets.ModelViewSet):
     serializer_class = PublisherSerializer
 
     @action(detail=True , methods=['get'] , url_path='books')
-    def list_book(self , request , pk = None):
+    def list_books(self , request , pk = None):
         publisher = self.get_object()
         books = Book.objects.filter(publisher=publisher)
         serializer = BookSerializer(books, many=True)

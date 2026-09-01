@@ -10,8 +10,8 @@ class BookFilter(django_filters.FilterSet):
     )
 
     publisher = django_filters.CharFilter(field_name='publisher__name', lookup_expr='icontains') 
-    published_after = django_filters.DateFilter(lookup_expr='gte')
-    published_before = django_filters.DateFilter(lookup_expr='lte')
+    published_after = django_filters.DateFilter(field_name='publication_date', lookup_expr='gte')
+    published_before = django_filters.DateFilter(field_name='publication_date', lookup_expr='lte')
     min_average_rating = django_filters.NumberFilter(field_name='average_rating', lookup_expr='gte')
     max_average_rating = django_filters.NumberFilter(field_name='average_rating', lookup_expr='lte')
 

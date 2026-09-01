@@ -57,7 +57,7 @@ class BookSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'author', 'publisher', 'categories', 'publication_date',
             'isbn', 'pages', 'description', 'average_rating', 'reviews',
-            'author_id', 'publisher_id', 'category_ids'
+            'author_id', 'publisher_id', 'category_ids' , 'added_by'
         ]
         read_only_fields = ['average_rating', 'author', 'publisher', 'categories', 'reviews']
 
@@ -68,13 +68,13 @@ class BookSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(str(e))
 
     def create(self, validated_data):
-        author_id = validated_data.pop('author')
-        publisher_id = validated_data.pop('publisher', None)
-        category_ids = validated_data.pop('categories', [])
+        author_obj = validated_data.pop('author') 
+        publisher_obj = validated_data.pop('publisher', None) 
+        category_objs = validated_data.pop('categories', []) 
 
-        book = Book.objects.create(author=author_id, publisher=publisher_id, **validated_data)
+        book = Book.objects.create(author=author_obj, publisher=publisher_obj, **validated_data)
 
-        book.categories.set(category_ids)
+        book.categories.set(category_objs)
 
         return book
 

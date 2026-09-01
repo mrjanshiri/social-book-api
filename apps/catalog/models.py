@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Author(models.Model):
     name = models.CharField(max_length=100)
@@ -31,6 +32,7 @@ class Book(models.Model):
     pages = models.PositiveIntegerField()
     description = models.TextField(blank=True)
     average_rating = models.FloatField(default=0.0)
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='added_books',)
 
     def __str__(self):
         return self.title
@@ -42,5 +44,7 @@ class Book(models.Model):
         else:
             self.average_rating = 0.0
         self.save()
+
+
 
 

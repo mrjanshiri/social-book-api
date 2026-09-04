@@ -1,10 +1,9 @@
 from rest_framework import viewsets , status , permissions
 from rest_framework.decorators import action 
 from rest_framework.response import Response
-from apps.core.permissions import IsAdminOrSelfReadOnly  , IsAdminOrReadOnly
+from apps.core.permissions import IsAdminOrReadOnly
 from .permissions import IsBookOwnerOrAdminOrReadOnly
 from django.db.models import Count
-from rest_framework.permissions import IsAuthenticated
 from .filters import BookFilter
 import django_filters
 from .models import Book, Author, Publisher, Category

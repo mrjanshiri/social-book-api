@@ -99,6 +99,13 @@
 - [x] Remove leftover `print()` statements, replace with logging where needed
   (none left anywhere in the project as of today — mostly found in `apps/catalog`)
 - [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
+  - ⚠️ After this rename, MUST go back and fix `apps/catalog/views.py`'s
+    `most_wishlisted` action — it does `Count('wishlistitems')`, which is the
+    current `related_name` on `Book` from `WishlistItem.book`. Once the model/
+    related_name changes (e.g. to `Shelf`/`shelf_items` or similar), this
+    `Count(...)` call will break with a `FieldError` (same class of bug as the
+    `published_after` one we already hit). Don't forget this — it's an easy
+    one to miss since it lives in a different app.
 - [ ] Add `drf-spectacular` for API docs
 - [ ] Write basic tests for users + catalog + reviews
 

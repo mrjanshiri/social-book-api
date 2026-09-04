@@ -31,6 +31,7 @@ class BookSerializer(serializers.ModelSerializer):
     publisher = serializers.StringRelatedField(read_only=True)
     categories = serializers.StringRelatedField(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True) 
+    added_by = serializers.StringRelatedField(read_only=True)
 
     author_id = serializers.PrimaryKeyRelatedField(
         queryset=Author.objects.all(),
@@ -59,7 +60,7 @@ class BookSerializer(serializers.ModelSerializer):
             'isbn', 'pages', 'description', 'average_rating', 'reviews',
             'author_id', 'publisher_id', 'category_ids' , 'added_by'
         ]
-        read_only_fields = ['average_rating', 'author', 'publisher', 'categories', 'reviews']
+        read_only_fields = ['average_rating', 'author', 'publisher', 'categories', 'reviews', 'added_by']
 
     def validate_isbn(self, value):
         try:

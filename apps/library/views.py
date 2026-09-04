@@ -1,19 +1,19 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import WishlistItem
-from .serializers import WhisListItemSerializer
+from .models import Shelf
+from .serializers import ShelfSerializer
 
 
-class WhishListItemViewSet(viewsets.ModelViewSet):
-    queryset = WishlistItem.objects.all()
-    serializer_class = WhisListItemSerializer
+class ShelfViewSet(viewsets.ModelViewSet):
+    queryset = Shelf.objects.all()
+    serializer_class = ShelfSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        queryset = WishlistItem.objects.all()
+        queryset = Shelf.objects.all()
         if not user.is_staff:
-            queryset = WishlistItem.objects.filter(user=user)
+            queryset = Shelf.objects.filter(user=user)
         return queryset
 
     def perform_create(self, serializer):

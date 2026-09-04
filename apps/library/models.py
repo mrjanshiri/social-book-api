@@ -3,9 +3,9 @@ from apps.catalog.models import Book
 from apps.users.models import Account
 
 
-class WishlistItem(models.Model):
-    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='wishlist_items')
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='wishlistitems')
+class Shelf(models.Model):
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='shelf_items')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='shelf_items')
     note = models.CharField(max_length=225, null=True, blank=True)
     added_at = models.DateTimeField(auto_now_add=True)
 

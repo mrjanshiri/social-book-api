@@ -24,5 +24,5 @@ class ShelfSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Shelf
-        fields = ['user', 'book', 'book_id', 'note', 'added_at']
-        read_only_fields = ['added_at']
+        fields = ['user', 'book', 'book_id', 'note', 'status', 'added_at', 'finished_at']
+        read_only_fields = ['added_at', 'finished_at']

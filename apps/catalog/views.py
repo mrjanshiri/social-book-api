@@ -48,11 +48,11 @@ class BookViewSet(viewsets.ModelViewSet):
                 return Response(ReviewSerializer(serializer.instance).data, status=201)
             return Response(serializer.errors, status=400)
 
-    @action(detail=False, methods=['get'], url_path='most-reviewed')
-    def most_reviewed(self, request):
+    @action(detail=False, methods=['get'], url_path='most-wishlisted')
+    def most_wishlisted(self, request):
         books = BOOK_QUERYSET.annotate(
-            num_reviews=Count('reviews')
-        ).order_by('-num_reviews')[:10]
+            num_wishlisted=Count('shelf_items')
+        ).order_by('-num_wishlisted')[:10]
         serializer = self.get_serializer(books, many=True)
         return Response(serializer.data)
 

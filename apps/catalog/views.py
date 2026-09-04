@@ -13,9 +13,12 @@ from apps.reviews.models import Review
 from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
 
 
+BOOK_QUERYSET = Book.objects.select_related('author', 'publisher').prefetch_related('categories', 'reviews')
+
+
 class BookViewSet(viewsets.ModelViewSet):
     permission_classes = [IsBookOwnerOrAdminOrReadOnly]
-    queryset = Book.objects.select_related('author', 'publisher').prefetch_related('categories', 'reviews')
+    queryset = BOOK_QUERYSET
     serializer_class = BookSerializer
     filter_backends = [django_filters.rest_framework.DjangoFilterBackend]
     filterset_class = BookFilter 
@@ -48,7 +51,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='most-reviewed')
     def most_reviewed(self, request):
-        books = Book.objects.annotate(
+        books = BOOK_QUERYSET.annotate(
             num_reviews=Count('reviews')
         ).order_by('-num_reviews')[:10]
         serializer = self.get_serializer(books, many=True)
@@ -56,7 +59,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='most-wishlisted')
     def most_wishlisted(self, request):
-        books = Book.objects.annotate(
+        books = BOOK_QUERYSET.annotate(
             num_wishlisted=Count('wishlistitems')
         ).order_by('-num_wishlisted')[:10]
         serializer = self.get_serializer(books, many=True)
@@ -64,7 +67,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='top-rated')
     def top_rated(self , request):
-        books = Book.objects.all().order_by('-average_rating')[:10]
+        books = BOOK_QUERYSET.order_by('-average_rating')[:10]
         serializer = self.get_serializer(books , many = True)
         return Response(serializer.data)
 
@@ -72,38 +75,38 @@ class BookViewSet(viewsets.ModelViewSet):
 class AuthorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
-    queryset = Author.objects.all()
+    queryset = Author.objects.prefetch_related('books')
     serializer_class = AuthorSerializer
 
     @action(detail=True, methods=['get'], url_path='books') 
     def list_books(self, request, pk=None):
         author = self.get_object()
-        books = Book.objects.filter(author=author)
+        books = BOOK_QUERYSET.filter(author=author)
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data)
 
 
 class PublisherViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
-    queryset = Publisher.objects.all()
+    queryset = Publisher.objects.prefetch_related('books')
     serializer_class = PublisherSerializer
 
     @action(detail=True , methods=['get'] , url_path='books')
     def list_books(self , request , pk = None):
         publisher = self.get_object()
-        books = Book.objects.filter(publisher=publisher)
+        books = BOOK_QUERYSET.filter(publisher=publisher)
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
-    queryset = Category.objects.all()
+    queryset = Category.objects.prefetch_related('books')
     serializer_class = CategorySerializer
 
     @action(detail=True, methods=['get'], url_path='books')
     def list_books(self, request, pk=None):
         category = self.get_object()
-        books = Book.objects.filter(categories=category)
+        books = BOOK_QUERYSET.filter(categories=category)
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data)

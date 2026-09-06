@@ -19,6 +19,7 @@ class Shelf(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_TO_READ)
     added_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True, blank=True)
+    is_private = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('user', 'book')

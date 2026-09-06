@@ -1,20 +1,32 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from .models import Shelf
 from .serializers import ShelfSerializer
+from .permissions import IsShelfOwnerOrReadOnly
 
 
 class ShelfViewSet(viewsets.ModelViewSet):
-    queryset = Shelf.objects.all()
     serializer_class = ShelfSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsShelfOwnerOrReadOnly]
 
     def get_queryset(self):
-        user = self.request.user
-        queryset = Shelf.objects.all()
-        if not user.is_staff:
-            queryset = Shelf.objects.filter(user=user)
-        return queryset
+        request_user = self.request.user
+        user_param = self.request.query_params.get('user')
+        status_param = self.request.query_params.get('status')
+
+        if user_param:
+            queryset = Shelf.objects.filter(user_id=user_param)
+
+            if str(request_user.id) != str(user_param):
+                queryset = queryset.filter(is_private=False)
+        else:
+            queryset = Shelf.objects.filter(user=request_user)
+
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        return queryset.select_related(
+            'user', 'book', 'book__author', 'book__publisher'
+        ).prefetch_related('book__categories')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

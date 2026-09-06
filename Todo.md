@@ -98,16 +98,16 @@
       from before `Review`/`Wishlist` were extracted into their own apps
 - [x] Remove leftover `print()` statements, replace with logging where needed
   (none left anywhere in the project as of today — mostly found in `apps/catalog`)
-- [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
-  - ⚠️ After this rename, MUST go back and fix `apps/catalog/views.py`'s
-    `most_wishlisted` action — it does `Count('wishlistitems')`, which is the
-    current `related_name` on `Book` from `WishlistItem.book`. Once the model/
-    related_name changes (e.g. to `Shelf`/`shelf_items` or similar), this
-    `Count(...)` call will break with a `FieldError` (same class of bug as the
-    `published_after` one we already hit). Don't forget this — it's an easy
-    one to miss since it lives in a different app.
-- [ ] Add `drf-spectacular` for API docs
-- [ ] Write basic tests for users + catalog + reviews
+- [x] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
+  - Model `WishlistItem` → `Shelf`; fixed `Whis*`-typo naming throughout
+    (serializer, view, admin); `related_name` on both `user` and `book` FKs
+    unified to `shelf_items`; URL path `whishlistitems/` → `shelf/`
+  - Added `status` field (`to_read` / `reading` / `finished`, default `to_read`)
+    and `finished_at` (auto-set on `save()` when status becomes `finished`,
+    auto-cleared if status moves away from `finished`)
+  - Fixed the `apps/catalog/views.py::most_wishlisted` dependency on the old
+    `related_name` (`Count('wishlistitems')` → `Count('shelf_items')`) as
+    anticipated above
 
 ## Phase 2.5 — User Book Contributions (not started, design only so far)
 - [ ] Regular (non-staff) users should be able to add a book by ISBN only —

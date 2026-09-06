@@ -24,5 +24,12 @@ class ShelfSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Shelf
-        fields = ['user', 'book', 'book_id', 'note', 'status', 'added_at', 'finished_at']
+        fields = ['user', 'book', 'book_id', 'note', 'status', 'added_at', 'finished_at', 'is_private']
         read_only_fields = ['added_at', 'finished_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and instance.user != request.user:
+            data.pop('note', None)
+        return data

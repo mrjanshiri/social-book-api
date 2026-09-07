@@ -27,6 +27,18 @@ class ShelfSerializer(serializers.ModelSerializer):
         fields = ['user', 'book', 'book_id', 'note', 'status', 'added_at', 'finished_at', 'is_private']
         read_only_fields = ['added_at', 'finished_at']
 
+    def validate(self, attrs):
+        if self.instance is None:
+            request = self.context.get('request')
+            book = attrs.get('book')
+            if request and book and Shelf.objects.filter(user=request.user, book=book).exists():
+                raise serializers.ValidationError({"book_id": "This book is already on your shelf."})
+        return attrs
+
+    def update(self, instance, validated_data):
+        validated_data.pop('book', None)
+        return super().update(instance, validated_data)
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get('request')

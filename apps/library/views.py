@@ -22,10 +22,14 @@ class ShelfViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"user": "Must be a valid integer id."})
 
             queryset = Shelf.objects.filter(user_id=user_param)
-            if request_user.id != user_param:
+            if not request_user.is_authenticated or request_user.id != user_param:
                 queryset = queryset.filter(is_private=False)
-        else:
+        elif request_user.is_authenticated:
             queryset = Shelf.objects.filter(user=request_user)
+        else:
+            raise ValidationError({
+                "detail": "Log in to see your own shelf, or add ?user=<id> to view someone else's public shelf."
+            })
 
         if status_param:
             queryset = queryset.filter(status=status_param)

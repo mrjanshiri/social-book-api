@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 from .models import Shelf
 from .serializers import ShelfSerializer
 from .permissions import IsShelfOwnerOrReadOnly
@@ -7,6 +8,7 @@ from .permissions import IsShelfOwnerOrReadOnly
 class ShelfViewSet(viewsets.ModelViewSet):
     serializer_class = ShelfSerializer
     permission_classes = [IsShelfOwnerOrReadOnly]
+    lookup_field = 'book_id'
 
     def get_queryset(self):
         request_user = self.request.user
@@ -14,9 +16,13 @@ class ShelfViewSet(viewsets.ModelViewSet):
         status_param = self.request.query_params.get('status')
 
         if user_param:
-            queryset = Shelf.objects.filter(user_id=user_param)
+            try:
+                user_param = int(user_param)
+            except (TypeError, ValueError):
+                raise ValidationError({"user": "Must be a valid integer id."})
 
-            if str(request_user.id) != str(user_param):
+            queryset = Shelf.objects.filter(user_id=user_param)
+            if request_user.id != user_param:
                 queryset = queryset.filter(is_private=False)
         else:
             queryset = Shelf.objects.filter(user=request_user)

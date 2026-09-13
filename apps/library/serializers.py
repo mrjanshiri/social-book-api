@@ -42,6 +42,6 @@ class ShelfSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get('request')
-        if request and instance.user != request.user:
+        if not request or instance.user != request.user:
             data.pop('note', None)
         return data

@@ -3,7 +3,7 @@ from rest_framework.exceptions import ValidationError
 from .models import Shelf
 from .serializers import ShelfSerializer
 from .permissions import IsShelfOwnerOrReadOnly
-
+from django.db import transaction, IntegrityError
 
 class ShelfViewSet(viewsets.ModelViewSet):
     serializer_class = ShelfSerializer
@@ -33,6 +33,9 @@ class ShelfViewSet(viewsets.ModelViewSet):
             })
 
         if status_param:
+            valid_statuses = [choice[0] for choice in Shelf.STATUS_CHOICES]
+            if status_param not in valid_statuses:
+                raise ValidationError({"status": f"Must be one of: {', '.join(valid_statuses)}."})
             queryset = queryset.filter(status=status_param)
 
         return queryset.select_related(
@@ -40,4 +43,8 @@ class ShelfViewSet(viewsets.ModelViewSet):
         ).prefetch_related('book__categories')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        try:
+            with transaction.atomic():
+                serializer.save(user=self.request.user)
+        except IntegrityError:
+            raise ValidationError({"book_id": "This book is already on your shelf."})

@@ -14,7 +14,7 @@ class Shelf(models.Model):
     ]
 
     user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='shelf_items')
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='shelf_items')
+    book = models.ForeignKey(Book, on_delete=models.PROTECT, related_name='shelf_items')
     note = models.CharField(max_length=225, null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_TO_READ)
     added_at = models.DateTimeField(auto_now_add=True)

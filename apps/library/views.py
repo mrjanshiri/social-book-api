@@ -9,6 +9,8 @@ class ShelfViewSet(viewsets.ModelViewSet):
     serializer_class = ShelfSerializer
     permission_classes = [IsShelfOwnerOrReadOnly]
     lookup_field = 'book_id'
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
 
     def get_queryset(self):
         # NOTE Intentional: viewing another user's shelf (list or detail)

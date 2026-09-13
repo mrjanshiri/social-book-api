@@ -14,7 +14,7 @@ class ShelfBookMiniSerializer(serializers.ModelSerializer):
 
 
 class ShelfSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
+    user = serializers.ReadOnlyField(source='user.id')
     book = ShelfBookMiniSerializer(read_only=True)
     book_id = serializers.PrimaryKeyRelatedField(
         queryset=Book.objects.all(),
@@ -36,7 +36,8 @@ class ShelfSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        validated_data.pop('book', None)
+        if 'book' in validated_data:
+            raise serializers.ValidationError({"book_id": "book_id cannot be changed after creation."})
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):

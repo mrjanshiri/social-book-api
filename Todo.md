@@ -98,16 +98,9 @@
       from before `Review`/`Wishlist` were extracted into their own apps
 - [x] Remove leftover `print()` statements, replace with logging where needed
   (none left anywhere in the project as of today — mostly found in `apps/catalog`)
-- [x] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
-  - Model `WishlistItem` → `Shelf`; fixed `Whis*`-typo naming throughout
-    (serializer, view, admin); `related_name` on both `user` and `book` FKs
-    unified to `shelf_items`; URL path `whishlistitems/` → `shelf/`
-  - Added `status` field (`to_read` / `reading` / `finished`, default `to_read`)
-    and `finished_at` (auto-set on `save()` when status becomes `finished`,
-    auto-cleared if status moves away from `finished`)
-  - Fixed the `apps/catalog/views.py::most_wishlisted` dependency on the old
-    `related_name` (`Count('wishlistitems')` → `Count('shelf_items')`) as
-    anticipated above
+- [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
+- [ ] Add `drf-spectacular` for API docs
+- [ ] Write basic tests for users + catalog + reviews
 
 ## Phase 2.5 — User Book Contributions (not started, design only so far)
 - [ ] Regular (non-staff) users should be able to add a book by ISBN only —
@@ -123,6 +116,10 @@
 - [ ] Until the ISBN-lookup endpoint exists, regular users attempting
   `POST /books/` should get an informative "coming soon" message rather than
   a bare permission-denied
+- [ ] `apps/library`: new endpoint to see who has a given book on their shelf
+  (book-centric, not user-centric — the inverse of current `/shelf/` endpoints).
+  Needs its own permission/serializer; must only surface users with
+  `is_private=False` for that book, never leak private shelf entries.
 
 ## Phase 3 — Social Features
 - [ ] `apps/social`: Follow / Follower model + endpoints

@@ -11,10 +11,11 @@ class ShelfViewSet(viewsets.ModelViewSet):
     lookup_field = 'book_id'
 
     def get_queryset(self):
+        # NOTE Intentional: viewing another user's shelf (list or detail)
+        # always requires an explicit ?user=<id>. No implicit fallback.
         request_user = self.request.user
         user_param = self.request.query_params.get('user')
         status_param = self.request.query_params.get('status')
-
         if user_param:
             try:
                 user_param = int(user_param)

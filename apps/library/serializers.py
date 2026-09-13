@@ -10,7 +10,7 @@ class ShelfBookMiniSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['title', 'author', 'publisher', 'categories', 'description']
+        fields = ['id','title', 'author', 'publisher', 'categories', 'description']
 
 
 class ShelfSerializer(serializers.ModelSerializer):

@@ -10,7 +10,9 @@ from .models import Book, Author, Publisher, Category
 from .serializers import BookSerializer, AuthorSerializer, PublisherSerializer, CategorySerializer
 from apps.reviews.models import Review
 from apps.reviews.serializers import ReviewSerializer, ReviewCreateSerializer
-
+from rest_framework import viewsets, status, permissions
+from rest_framework.response import Response
+from django.db.models import ProtectedError
 
 BOOK_QUERYSET = Book.objects.select_related('author', 'publisher').prefetch_related('categories', 'reviews')
 
@@ -69,6 +71,17 @@ class BookViewSet(viewsets.ModelViewSet):
         books = BOOK_QUERYSET.order_by('-average_rating')[:10]
         serializer = self.get_serializer(books , many = True)
         return Response(serializer.data)
+
+
+    
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {"detail": "This book cannot be deleted because it is on at least one user's shelf."},
+                status=status.HTTP_409_CONFLICT
+            )
 
 
 class AuthorViewSet(viewsets.ModelViewSet):

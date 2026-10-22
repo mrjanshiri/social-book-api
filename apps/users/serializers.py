@@ -86,4 +86,13 @@ class UserSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"is_staff": "Only SuperAdmins can grant or revoke Admin status."}
                 )
+
+        if 'is_superuser' in attrs or 'is_staff' in attrs:
+                will_be_superuser = attrs.get(
+                    'is_superuser',
+                    self.instance.is_superuser if self.instance else False
+                )
+                if will_be_superuser:
+                    attrs['is_staff'] = True
+
         return attrs

@@ -1,6 +1,6 @@
 # Todo — LIBA
 
-## Phase 0 — Project Hygiene (current)
+## Phase 0 — Project Hygiene (done)
 - [x] Create venv, install packages, generate `requirements.txt`
 - [x] Move SECRET_KEY, DEBUG to `.env` (python-decouple) + `.env.example`
 - [x] Add `.gitignore` (venv/, db.sqlite3, media/, __pycache__, .env, *.pyc)
@@ -23,16 +23,17 @@
       (DJANGO_SETTINGS_MODULE controlled via `.env`, read in manage.py/wsgi.py/asgi.py)
 
 ## Revisit Later (noted during Phase 0, not urgent)
-- `ReviewViewSet.get_queryset` and `WhishListItemViewSet.get_queryset` duplicate the same
-  "if not staff, filter by user" pattern — candidate for a shared mixin/base class in
-  `apps/core` once that app exists (marjan flagged dissatisfaction with current form,
-  revisit after all apps are split)
+- `ReviewViewSet.get_queryset` used to share a "if not staff, filter by user" pattern with the
+  old wishlist viewset. After the Shelf work this is no longer the same rule: shelf reads are
+  public (minus `is_private`), writes are owner-only even for staff. A shared mixin is only
+  worth it if a *new* app repeats the old staff/self pattern. Leave `apps/core` alone until then.
 - `apps/core` was just an empty scaffold in Phase 0. The `role` → `is_staff`/`is_superuser`
   refactor (Phase 2) is now done, and as part of it:
   - [x] `IsSuperAdminOrAdmin` (now `IsAdminOrSelfReadOnly`) moved to `apps/core/permissions.py`,
     rewritten to use `is_staff`/`is_superuser` instead of `role`
-  - [ ] Still open: shared base queryset/mixin for the repeated "staff sees all, user sees
-    own" pattern (see item above) — not done yet
+  - [x] Shared staff/self queryset mixin — dropped. Shelf does not use that pattern, and
+    forcing one mixin across apps would hide different rules. Reopen only if a second app
+    copies the same queryset.
   - `apps/core/pagination.py` stays a placeholder until a concrete need for custom
     pagination (beyond DRF's global `PageNumberPagination` default) comes up — no
     speculative pagination classes before then.
@@ -42,7 +43,7 @@
 - [ ] Verify all migrations run clean on Postgres
 - [ ] (Optional) Docker Compose for local Postgres
 
-## Phase 2 — Core Domain Cleanup
+## Phase 2 — Core Domain Cleanup (current — tests and API docs left)
 - [x] `apps/users`: replace custom `role` field with `is_staff` / `is_superuser`
   - Kept custom logic: prevent deleting/demoting last superuser (`would_remove_last_superuser`,
     now re-locks the target row too, not just the superuser count, to avoid a stale-read race)
@@ -98,24 +99,41 @@
       from before `Review`/`Wishlist` were extracted into their own apps
 - [x] Remove leftover `print()` statements, replace with logging where needed
   (none left anywhere in the project as of today — mostly found in `apps/catalog`)
-- [ ] `apps/library`: rename Wishlist → Shelf (add reading status: to-read / reading / finished)
+- [x] `apps/library`: rename Wishlist → Shelf (reading status: to-read / reading / finished)
+  Done across Sep 4–13. Model is `Shelf` (`migrations/0002_shelf_delete_wishlistitem` onward).
+  Also landed with it, not a separate Todo item:
+  - `status` + `finished_at` (set/cleared in `save()`), `is_private` (default public)
+  - reads: guests can see a public shelf via `?user=<id>`; `GET /shelf/` with no user
+    and no login returns 400 with a hint; invalid `user` / `status` query params return 400
+  - writes: only the owner (not staff, not superuser). PUT disabled. `book_id` cannot
+    be changed after create. duplicate `(user, book)` returns 400, including the
+    concurrent `IntegrityError` path
+  - response exposes nested `book.id` and numeric `user` id; `note` is hidden from
+    anyone who is not the owner (fail-closed if request context is missing)
+  - lookup is `book_id`. Another user's public item is `GET /shelf/<book_id>/?user=<owner_id>`
+  - `Book` delete is `PROTECT` when the book is on a shelf; API returns a clean error
+    instead of a 500. `note` is `blank=True` without `null=True`
+  - catalog `most_wishlisted` counts `shelf_items`, not the old wishlist related name
 - [ ] Add `drf-spectacular` for API docs
-- [ ] Write basic tests for users + catalog + reviews
+- [ ] Write basic tests for users + catalog + reviews + library
+  (all four `tests.py` files are still the Django stub. Do library first — it has
+  the most rules and zero coverage.)
 
-## Phase 2.5 — User Book Contributions (not started, design only so far)
+## Phase 2.5 — User Book Contributions (design only; the "coming soon" message is the only piece built)
 - [ ] Regular (non-staff) users should be able to add a book by ISBN only —
   fetch the rest (title, author, publisher, ...) from an external books API
   (Google Books / OpenLibrary, TBD). Admin/staff keep the existing full-form
   `POST /books/` as-is; this is a *separate*, additional endpoint for regular
   users, not a replacement.
 - [ ] Regular users should be able to fix an ISBN typo on a book *they added*
-  (needs a `Book.added_by` FK — decided 1-ب: ownership-based, only the
-  original adder can edit/isbn-correct their own book; staff/superuser can
-  always edit any book; delete stays staff/superuser-only, even for the
-  adder)
-- [ ] Until the ISBN-lookup endpoint exists, regular users attempting
-  `POST /books/` should get an informative "coming soon" message rather than
-  a bare permission-denied
+  (`Book.added_by` already exists and is read-only on the serializer — decided
+  1-ب: only the original adder can edit their own book; staff/superuser can
+  always edit any book; delete stays staff/superuser-only, even for the adder.
+  The ISBN-correction flow itself is not built.)
+- [x] Until the ISBN-lookup endpoint exists, regular users attempting
+  `POST /books/` get an informative message
+  (`IsBookOwnerOrAdminOrReadOnly`: "Adding books by regular users will be
+  enabled soon via ISBN lookup.") rather than a bare permission-denied
 - [ ] `apps/library`: new endpoint to see who has a given book on their shelf
   (book-centric, not user-centric — the inverse of current `/shelf/` endpoints).
   Needs its own permission/serializer; must only surface users with

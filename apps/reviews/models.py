@@ -1,5 +1,6 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
+
 from apps.catalog.models import Book
 from apps.users.models import Account
 
@@ -12,16 +13,13 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('book', 'user')
+        ordering = ['-created_at', '-id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['book', 'user'],
+                name='unique_review_per_user_and_book',
+            ),
+        ]
 
     def __str__(self):
         return f'Review for {self.book.title} by {self.user}'
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.book.update_average_rating()
-
-    def delete(self, *args, **kwargs):
-        book = self.book
-        super().delete(*args, **kwargs)
-        book.update_average_rating()

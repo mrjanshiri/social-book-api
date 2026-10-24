@@ -15,6 +15,7 @@
       (kept nested `/books/<id>/reviews/` action in BookViewSet as-is — decided not to
       change API behavior during structural refactor; catalog imports Review/serializers
       from apps.reviews where needed)
+      (Superseded in Phase 2: the nested action was removed, see `apps/reviews` below.)
 - [x] Extract `WishlistItem` model + serializer + view + url out of `apps/catalog` into `apps/library`
       (kept model/field names as-is — rename to `Shelf` deferred to Phase 2)
 - [x] Scaffold `apps/core` (plain Python package, no models — not in INSTALLED_APPS,
@@ -23,10 +24,10 @@
       (DJANGO_SETTINGS_MODULE controlled via `.env`, read in manage.py/wsgi.py/asgi.py)
 
 ## Revisit Later (noted during Phase 0, not urgent)
-- `ReviewViewSet.get_queryset` used to share a "if not staff, filter by user" pattern with the
-  old wishlist viewset. After the Shelf work this is no longer the same rule: shelf reads are
-  public (minus `is_private`), writes are owner-only even for staff. A shared mixin is only
-  worth it if a *new* app repeats the old staff/self pattern. Leave `apps/core` alone until then.
+- `ReviewViewSet` no longer filters by user: reviews are public-read now (see Phase 2
+  `apps/reviews`). Neither reviews nor shelf use the old "staff sees all, user sees own"
+  pattern, so a shared mixin has nothing to share. Leave `apps/core` alone until a
+  *new* app repeats that pattern.
 - `apps/core` was just an empty scaffold in Phase 0. The `role` → `is_staff`/`is_superuser`
   refactor (Phase 2) is now done, and as part of it:
   - [x] `IsSuperAdminOrAdmin` (now `IsAdminOrSelfReadOnly`) moved to `apps/core/permissions.py`,
@@ -37,6 +38,12 @@
   - `apps/core/pagination.py` stays a placeholder until a concrete need for custom
     pagination (beyond DRF's global `PageNumberPagination` default) comes up — no
     speculative pagination classes before then.
+- `BookSerializer` embeds every review of every book in `GET /books/` (unbounded). Replace
+  with `reviews_count`; full reviews stay on `GET /reviews/?book=<id>`. Then
+  `reviews__user` in `BOOK_QUERYSET` is no longer needed.
+- `Book.update_average_rating` loads all reviews in Python and does a full `save()`.
+  `aggregate(Avg('rating'))` + `save(update_fields=['average_rating'])` would be cheaper.
+  Low priority.
 
 ## Phase 1 — Database Migration
 - [ ] Add PostgreSQL (psycopg2-binary), update DATABASES in prod/dev settings
@@ -64,6 +71,7 @@
       `Review.delete()` override, symmetric to the existing `save()` override
       (note: only covers `instance.delete()`, not bulk `queryset.delete()` — fine for
       now since there's no bulk-delete endpoint)
+      Superseded by signals, see `apps/reviews` below (also covers cascade deletes).
     - `BookSerializer.update()`: couldn't clear `categories` via `category_ids: []`
       (falsy-list bug — fixed by checking `'categories' in validated_data` before
       `pop()`, not the popped value's truthiness)
@@ -114,10 +122,38 @@
   - `Book` delete is `PROTECT` when the book is on a shelf; API returns a clean error
     instead of a 500. `note` is `blank=True` without `null=True`
   - catalog `most_wishlisted` counts `shelf_items`, not the old wishlist related name
+- [x] `apps/reviews`: one review API, correct average rating
+  - `POST /reviews/` always returned 500 (`user`/`book` were read-only and nothing
+    supplied them). `/reviews/` is now the only review route; the nested
+    `/books/<id>/reviews/` action and `ReviewCreateSerializer` are gone.
+    Reviews of a book: `GET /reviews/?book=<id>`; a user's reviews: `?user=<id>`.
+  - reads: public, guests included. writes: any logged-in user creates with `book_id`;
+    only the owner edits; the owner or staff can delete (moderation only, staff cannot
+    edit someone else's words). PUT disabled. `book_id` cannot change after create.
+    duplicate `(book, user)` returns 400, including the concurrent `IntegrityError` path.
+    response exposes `user_id` and `book_id`.
+  - `unique_together` replaced by `UniqueConstraint`; `Meta.ordering` added
+    (stable pagination); `select_related('user', 'book')` on the viewset.
+  - `Book.average_rating` is now refreshed by `post_save`/`post_delete` signals in
+    `apps/reviews/signals.py` (calling the existing `Book.update_average_rating`, so the
+    calculation still lives in catalog). Needed because deleting a user cascades reviews
+    away without calling `Review.delete()`. This is the only use of signals in the project.
+    Caveat: `QuerySet.update()`, `bulk_create()` and `bulk_update()` on `Review` do not
+    fire them.
+  - Also fixed in `apps/catalog/views.py` along the way: `most_reviewed` restored,
+    duplicate `most_wishlisted` (old `wishlistitems` copy won) removed,
+    `BOOK_QUERYSET` prefetches `reviews__user` (N+1).
+  - [ ] Record the signals exception in `Project_info.md`.
+- [x] `apps/users`: a superuser must imply staff. `UserSerializer.validate` now forces
+  `is_staff=True` whenever the resulting account is a superuser, so the inconsistent
+  combination can no longer be created through the API.
+  (Existing accounts were repaired once with
+  `Account.objects.filter(is_superuser=True, is_staff=False).update(is_staff=True)`.)
 - [ ] Add `drf-spectacular` for API docs
 - [ ] Write basic tests for users + catalog + reviews + library
   (all four `tests.py` files are still the Django stub. Do library first — it has
-  the most rules and zero coverage.)
+  the most rules and zero coverage. For reviews cover: duplicate review, owner-only edit,
+  and that deleting a user resets the book's `average_rating`.)
 
 ## Phase 2.5 — User Book Contributions (design only; the "coming soon" message is the only piece built)
 - [ ] Regular (non-staff) users should be able to add a book by ISBN only —

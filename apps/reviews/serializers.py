@@ -35,10 +35,3 @@ class ReviewSerializer(serializers.ModelSerializer):
                 {'book_id': 'book_id cannot be changed after creation.'}
             )
         return super().update(instance, validated_data)
-
-
-class ReviewCreateSerializer(serializers.ModelSerializer):
-    # TODO: remove in step 3, only the old catalog action still uses it.
-    class Meta:
-        model = Review
-        fields = ['rating', 'comment']

@@ -14,13 +14,14 @@ class IsAdminOrSelfReadOnly(permissions.BasePermission):
         if request.user.is_superuser:
             return True
         if request.user.is_staff:
+            if request.method in permissions.SAFE_METHODS:
+                return True
             if getattr(obj, 'is_superuser', False):
                 return False
             if getattr(obj, 'is_staff', False) and obj != request.user:
                 return False
             return True
         return request.method in permissions.SAFE_METHODS and obj == request.user
-
 
 
 class IsAdminOrReadOnly(permissions.BasePermission):

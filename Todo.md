@@ -44,6 +44,12 @@
 - `Book.update_average_rating` loads all reviews in Python and does a full `save()`.
   `aggregate(Avg('rating'))` + `save(update_fields=['average_rating'])` would be cheaper.
   Low priority.
+- Username/email uniqueness is case-insensitive only at the serializer level. The DB
+  constraint is still case-sensitive, so two perfectly simultaneous signups could slip
+  through. A `UniqueConstraint` on `Lower('email')` would close it (needs a migration).
+- `Account.delete()` removes the profile picture, but `queryset.delete()` (e.g. the admin
+  "Delete selected" action) does not call it, so those pictures stay on disk. No API path
+  does a bulk delete today.
 
 ## Phase 1 — Database Migration
 - [ ] Add PostgreSQL (psycopg2-binary), update DATABASES in prod/dev settings
@@ -149,11 +155,34 @@
   combination can no longer be created through the API.
   (Existing accounts were repaired once with
   `Account.objects.filter(is_superuser=True, is_staff=False).update(is_staff=True)`.)
+- [x] `apps/users`: signup and profile hardening (found while writing tests)
+  - signup: password strength is validated with Django's validators (including similarity
+    to username/email); username/email uniqueness ignores case, and so does the email
+    check on the profile; `max_length` (150 / 254) enforced in the serializer (a 151-char
+    username would have been a 500 on Postgres). Extra/unknown fields in the signup body
+    are ignored, not rejected (DRF default; privilege fields can't be set that way).
+  - profile: `PUT` is now a full update (`email` required) and `PATCH` was added for
+    partial updates; dead `if not value` email check removed; `request.data.copy()`
+    dropped (it was only a copy, and large uploads are a suspected 500).
+  - profile picture: the old file is deleted when the picture is replaced, cleared, or
+    the account is deleted (`Account.save`/`delete`, via `transaction.on_commit`, so a
+    rolled-back delete keeps the file).
+  - `apps/core/permissions.py`: staff can now `GET` any account's detail (the list
+    already showed everyone); `PATCH`/`DELETE` on a superuser or another staff account
+    is still 403.
 - [ ] Add `drf-spectacular` for API docs
 - [ ] Write basic tests for users + catalog + reviews + library
-  (all four `tests.py` files are still the Django stub. Do library first — it has
+  (all four `tests.py` files were still the Django stub. Do library first — it has
   the most rules and zero coverage. For reviews cover: duplicate review, owner-only edit,
   and that deleting a user resets the book's `average_rating`.)
+  - users: `apps/users/tests/` is now a package (stub `tests.py` removed).
+    [x] `test_signup.py`. [ ] `test_profile.py` (read, PUT/PATCH rules, `username`
+    immutable, email rules, picture upload/replace/clear, a ~4 MB upload).
+    [ ] `test_user_admin.py` (list/detail visibility, staff view vs write on other staff,
+    last superuser, each branch of the superuser-implies-staff rule).
+    Decided not to add `test_auth` (SimpleJWT's own code), `test_serializers` or
+    `test_utils` (covered through `test_user_admin`).
+  - [ ] catalog, reviews, library
 
 ## Phase 2.5 — User Book Contributions (design only; the "coming soon" message is the only piece built)
 - [ ] Regular (non-staff) users should be able to add a book by ISBN only —

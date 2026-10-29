@@ -67,8 +67,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate_email(self, value):
-        if not value:
-            raise serializers.ValidationError("Email cannot be empty.")
         if User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value

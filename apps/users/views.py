@@ -33,18 +33,11 @@ class UserProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
-        data = request.data.copy()
-        if 'profile_picture' in request.FILES:
-            data['profile_picture'] = request.FILES['profile_picture']
-        elif 'profile_picture' in data and data['profile_picture'] is None:
-            data['profile_picture'] = None
-
-        serializer = self.serializer_class(request.user, data=data, partial=True)
+        serializer = self.serializer_class(request.user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer

@@ -2,6 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 import re
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 User = get_user_model()
 
@@ -10,7 +12,7 @@ class SignupSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=150, required=True)
     password = serializers.CharField(write_only=True, required=True)
     email = serializers.EmailField(max_length=254, required=True)
-    
+
     class Meta:
         model = User
         fields = ["username", "password", "email"]
@@ -27,24 +29,26 @@ class SignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("An integrity error occurred. Please try again.")
 
     def validate_username(self, value):
-
         if not re.fullmatch(r'[A-Za-z0-9_]+', value):
             raise serializers.ValidationError(
                 "Username can only contain letters, numbers, and underscores."
             )
-
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError(
-                "This username is already in use."
-            )
-
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already in use.")
         return value
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
-    
+
+    def validate(self, attrs):
+        candidate = User(username=attrs['username'], email=attrs['email'])
+        try:
+            validate_password(attrs['password'], user=candidate)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
+        return attrs
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -65,7 +69,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         if not value:
             raise serializers.ValidationError("Email cannot be empty.")
-        if User.objects.filter(email=value).exclude(pk=self.instance.pk).exists():
+        if User.objects.filter(email__iexact=value).exclude(pk=self.instance.pk).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
 

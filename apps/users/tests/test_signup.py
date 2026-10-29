@@ -58,6 +58,25 @@ class SignupSuccessTests(APITestCase):
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
+
+    def test_extra_fields_have_no_effect(self):
+        payload = valid_payload(
+            id=9999,
+            first_name='Hacker',
+            last_name='Hacker',
+            is_active=False,
+            foo='bar',
+        )
+
+        response = self.client.post(SIGNUP_URL, payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username='alice_01')
+        self.assertNotEqual(user.pk, 9999)
+        self.assertEqual(user.first_name, '')
+        self.assertEqual(user.last_name, '')
+        self.assertTrue(user.is_active)
+
     def test_username_may_mix_letters_digits_and_underscores(self):
         payload = valid_payload(username='Ali_99_x')
 
@@ -124,6 +143,29 @@ class SignupValidationTests(APITestCase):
         )
 
         self.assert_rejected(valid_payload(), 'email')
+
+
+    def test_username_uniqueness_ignores_case(self):
+        User.objects.create_user(
+            username='Alice_01', email='other@example.com', password='x'
+        )
+
+        self.assert_rejected(valid_payload(username='alice_01'), 'username')
+
+    def test_email_uniqueness_ignores_case(self):
+        User.objects.create_user(
+            username='someone_else', email='Alice@Example.com', password='x'
+        )
+
+        self.assert_rejected(valid_payload(email='alice@example.com'), 'email')
+
+    def test_weak_passwords_are_rejected(self):
+        for password in ('1', 'short1', '12345678', 'password', 'alice_01'):
+            with self.subTest(password=password):
+                self.assert_rejected(valid_payload(password=password), 'password')
+
+    def test_overlong_username_is_rejected(self):
+        self.assert_rejected(valid_payload(username='a' * 151), 'username')
 
 
 class SignupMethodTests(APITestCase):

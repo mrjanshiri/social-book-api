@@ -19,9 +19,10 @@ class SignupView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserProfileView(APIView):
@@ -32,12 +33,17 @@ class UserProfileView(APIView):
         serializer = self.serializer_class(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def _update(self, request, partial):
+        serializer = self.serializer_class(request.user, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def put(self, request, *args, **kwargs):
-        serializer = self.serializer_class(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self._update(request, partial=False)
+
+    def patch(self, request, *args, **kwargs):
+        return self._update(request, partial=True)
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer

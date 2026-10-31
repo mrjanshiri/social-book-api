@@ -48,13 +48,17 @@ class UserProfileView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdminOrSelfReadOnly]
-    http_method_names = ['get', 'put', 'patch', 'delete', 'head', 'options']
+    # No POST: users are only created through SignupView.
+    # No PUT: PATCH only, same as shelf and reviews.
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
     def get_queryset(self):
         user = self.request.user
+        # Explicit order: pagination over an unordered queryset is unstable.
+        queryset = Account.objects.order_by('id')
         if user.is_staff:
-            return Account.objects.all()
-        return Account.objects.filter(pk=user.pk)
+            return queryset
+        return queryset.filter(pk=user.pk)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -66,7 +70,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
             new_value = serializer.validated_data.get('is_superuser', user_to_update.is_superuser)
             if would_remove_last_superuser(user_to_update, new_value):
-                return Response({"detail": "Cannot demote the last SuperAdmin."}, status=403)
+                return Response(
+                    {"detail": "Cannot demote the last SuperAdmin."},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
             self.perform_update(serializer)
 
@@ -79,5 +86,8 @@ class UserViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             user_to_delete = self.get_object()
             if would_remove_last_superuser(user_to_delete, False):
-                return Response({"detail": "Cannot delete the last SuperAdmin."}, status=403)
+                return Response(
+                    {"detail": "Cannot delete the last SuperAdmin."},
+                    status=status.HTTP_409_CONFLICT,
+                )
             return super().destroy(request, *args, **kwargs)

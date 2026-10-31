@@ -76,6 +76,17 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'is_staff', 'is_superuser']
+        # Like the profile endpoint: a username is never changed after signup.
+        read_only_fields = ['username']
+
+    def validate_email(self, value):
+        # Same case-insensitive rule as signup and profile.
+        qs = User.objects.filter(email__iexact=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value
 
     def validate(self, attrs):
         requester = self.context['request'].user
@@ -89,12 +100,13 @@ class UserSerializer(serializers.ModelSerializer):
                     {"is_staff": "Only SuperAdmins can grant or revoke Admin status."}
                 )
 
+        # A superuser is always staff.
         if 'is_superuser' in attrs or 'is_staff' in attrs:
-                will_be_superuser = attrs.get(
-                    'is_superuser',
-                    self.instance.is_superuser if self.instance else False
-                )
-                if will_be_superuser:
-                    attrs['is_staff'] = True
+            will_be_superuser = attrs.get(
+                'is_superuser',
+                self.instance.is_superuser if self.instance else False,
+            )
+            if will_be_superuser:
+                attrs['is_staff'] = True
 
         return attrs
